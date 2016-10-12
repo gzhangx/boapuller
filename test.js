@@ -1,9 +1,10 @@
 var questionAnswers = require('./qa.json');
+var _ = require('lodash');
 setTimeout(function() {
   //window.callPhantom({exit:true});
   console.log('timeout, exiting');
   phantom.exit();
-}, 40000);
+}, 120*1000);
 var globalState = {
   stage : 0,
   questionAnswers :questionAnswers
@@ -14,6 +15,7 @@ function doStage(page) {
   var password = args[2];
    globalState = page.evaluate(function(username, password, globalState){
       var unamel= document.getElementById('enterID-input');
+     console.log('stage ' + globalState.stage);
       if (unamel && globalState.stage == 0) {
         //login
         unamel.value = username;
@@ -34,9 +36,9 @@ function doStage(page) {
           //document.getElementById('rbText1').checked = true;
           document.getElementById('btnARContinue').click();
           console.log('phone click');
-          setTimeout(function() {
-            window.callPhantom({exit:true});
-          }, 500);
+          //setTimeout(function() {
+          //  window.callPhantom({exit:true});
+          //}, 500);
         },500);
       } else if (globalState.stage == 1 && document.getElementById('tlpvt-challenge-answer')) {
         console.log('challenge answer');
@@ -45,23 +47,45 @@ function doStage(page) {
         var question = $('label[for="tlpvt-challenge-answer"]').html().trim();
         console.log('question is ' + question);
         ans.value = (globalState.questionAnswers[question]);
-        console.log(ans.value);
         //https://secure.bankofamerica.com/login/sign-in/signOnV2Screen.go
         document.VerifyCompForm.action='/login/sign-in/validateChallengeAnswerV2.go';
         $('#VerifyCompForm').submit();
         console.log('submited');
       } else if (globalState.stage == 2 && $('[name=DDA_details]').length) {
+        globalState.stage = 3;
         //<a name="DDA_details" href="/myaccounts/brain/redirect.go?source=overview&amp;target=acctDetails&amp;adx=xxx">xxx</a>
-        $('[name=DDA_details]')[0].click();
+        //setTimeout(function(){
+          $('[name=DDA_details]')[0].click();
+        //}, 500);
         console.log('dda clicked');
-        globalState.stage == 3;
       } else if (globalState.stage == 3 && $("[title='Statements & Documents']").length) {
-        $("[title='Statements & Documents']")[0].click();
+        console.log('stage 3');
+        setTimeout(function() {
+          $("[title='Statements & Documents']")[0].click();
+        },0);
+        globalState.stage = 4;
+        console.log('document clicked');
+      } else if (globalState.stage == 4 && $("[id='documentId0']").length) {
+        globalState.stage = 5;
+          $("[id='documentId0']")[0].click();
+          if ($("[id='menuOption3']").length) {
+            $("[id='menuOption3']")[0].click();
+            globalState.stage = 6;
+            console.log('donwload clicked');
+          }
+        console.log('document id0');
+      } else if (globalState.stage == 5 && $("[id='menuOption3']").length) {
+        setTimeout(function() {
+          $("[id='menuOption3']")[0].click();
+        },0);
+        globalState.stage = 6;
+        console.log('download clicked');
         setTimeout(function() {
           window.callPhantom({exit:true});
-        }, 1500);
+        }, 2500);
       }
-      //window.callPhantom({exit:true});
+
+     //window.callPhantom({exit:true});
      return globalState;
    }, username, password,globalState);
    console.log('end of first call');
@@ -87,11 +111,26 @@ page.onCallback = function(data) {
 };
 
 page.onResourceRequested = function(request) {
-  //console.log('Request ' + JSON.stringify(request,null,2));
+  if (globalState.stage >= 6) {
+    try{
+      if (request.url && request.url.indexOf('https://secure.bankofamerica.com/mycommunications/statements/retrievedocument.go') != -1) {
+        console.log('Request ' + JSON.stringify(request));
+      }
+    } catch (e) {console.log('error ' + e);}
+  }
+  //console.log('Request ' + JSON.stringify(request));
   //console.log('Request ' + (request==null?null:request.url));
   //console.log('.');
 };
 page.onResourceReceived = function(response) {
+  if (globalState.stage >=6) {
+     console.log(response.contentType);
+     var cd = _.find(response.headers, {name:'Content-Disposition'});
+     if (cd){
+       console.log(cd.value);
+       console.log(JSON.stringify(response));
+     }
+  }
   //console.log('Receive ' + JSON.stringify(response, undefined, 4));
   //console.log('x');
 };

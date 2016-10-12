@@ -3,3 +3,5 @@ qa.json
 *.png
 cookies.txt
 .DS_Store
+out.txt
+node_modules

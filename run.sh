@@ -1,1 +1,1 @@
-/Applications/phantomjs --cookies-file=cookies.txt  test.js u p
+/Applications/phantomjs --cookies-file=cookies.txt  test.js $1 $2
