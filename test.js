@@ -1,3 +1,4 @@
+var questionAnswers = require('qa.txt');
 var globalState = {
   stage : 0
 };
@@ -17,6 +18,8 @@ function doStage(page) {
         //window.callPhantom({exit:false});
         globalState.stage = 1;
       }else if( (document.getElementById('tlpvt-email1') || document.getElementById('rbText1')) && globalState.stage == 1) {
+        console.log('email stage found');
+        return;
         document.getElementById('rbText1').checked=true;
         globalState.stage = 2;
         setTimeout(function() {
@@ -29,6 +32,16 @@ function doStage(page) {
             window.callPhantom({exit:true});
           }, 500);
         },500);
+      } else if (globalState.stage == 1 && document.getElementById('tlpvt-challenge-answer')) {
+        console.log('challenge answer');
+        globalState.stage = 2;
+        var ans = document.getElementById('tlpvt-challenge-answer');
+        var questionele = $("input[for='tlpvt-challenge-answer']" );
+        console.log(questionele);
+        console.log('question is ' + questionele.text());
+        //https://secure.bankofamerica.com/login/sign-in/signOnV2Screen.go
+        document.VerifyCompForm.action='/login/sign-in/validateChallengeAnswerV2.go';
+        $('#VerifyCompForm').submit();
       }
       //window.callPhantom({exit:true});
      return globalState;
@@ -58,11 +71,11 @@ page.onCallback = function(data) {
 page.onResourceRequested = function(request) {
   //console.log('Request ' + JSON.stringify(request,null,2));
   //console.log('Request ' + (request==null?null:request.url));
-  console.log('.');
+  //console.log('.');
 };
 page.onResourceReceived = function(response) {
   //console.log('Receive ' + JSON.stringify(response, undefined, 4));
-  console.log('x');
+  //console.log('x');
 };
 page.open('https://secure.bankofamerica.com/login/sign-in/signOnV2Screen.go', function(status) {
   console.log("Status: " + status);
