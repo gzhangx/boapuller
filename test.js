@@ -1,6 +1,12 @@
-var questionAnswers = require('qa.txt');
+var questionAnswers = require('./qa.json');
+setTimeout(function() {
+  //window.callPhantom({exit:true});
+  console.log('timeout, exiting');
+  phantom.exit();
+}, 40000);
 var globalState = {
-  stage : 0
+  stage : 0,
+  questionAnswers :questionAnswers
 };
 function doStage(page) {
   var args = system.args;
@@ -36,12 +42,24 @@ function doStage(page) {
         console.log('challenge answer');
         globalState.stage = 2;
         var ans = document.getElementById('tlpvt-challenge-answer');
-        var questionele = $("input[for='tlpvt-challenge-answer']" );
-        console.log(questionele);
-        console.log('question is ' + questionele.text());
+        var question = $('label[for="tlpvt-challenge-answer"]').html().trim();
+        console.log('question is ' + question);
+        ans.value = (globalState.questionAnswers[question]);
+        console.log(ans.value);
         //https://secure.bankofamerica.com/login/sign-in/signOnV2Screen.go
         document.VerifyCompForm.action='/login/sign-in/validateChallengeAnswerV2.go';
         $('#VerifyCompForm').submit();
+        console.log('submited');
+      } else if (globalState.stage == 2 && $('[name=DDA_details]').length) {
+        //<a name="DDA_details" href="/myaccounts/brain/redirect.go?source=overview&amp;target=acctDetails&amp;adx=xxx">xxx</a>
+        $('[name=DDA_details]')[0].click();
+        console.log('dda clicked');
+        globalState.stage == 3;
+      } else if (globalState.stage == 3 && $("[title='Statements & Documents']").length) {
+        $("[title='Statements & Documents']")[0].click();
+        setTimeout(function() {
+          window.callPhantom({exit:true});
+        }, 1500);
       }
       //window.callPhantom({exit:true});
      return globalState;
