@@ -5,3 +5,5 @@ cookies.txt
 .DS_Store
 out.txt
 node_modules
+*.pdf
+*.pdf.*

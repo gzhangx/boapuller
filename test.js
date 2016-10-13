@@ -1,4 +1,5 @@
 var questionAnswers = require('./qa.json');
+var fs = require('fs');
 var _ = require('lodash');
 setTimeout(function() {
   //window.callPhantom({exit:true});
@@ -14,6 +15,30 @@ function doStage(page) {
   var username = args[1];
   var password = args[2];
    globalState = page.evaluate(function(username, password, globalState){
+     if(globalState.fileDownloadRequest) {
+         var downloadInfo = globalState.fileDownloadRequest;
+         globalState.fileDownloadRequest = null;
+         console.log('downloading ' + downloadInfo.url);
+         console.log('downloading data ' + downloadInfo.postData);
+         var xhr = new XMLHttpRequest();
+         xhr.open('POST', downloadInfo.url, true);
+         xhr.responseType = 'arraybuffer';
+         xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+         xhr.onload = function () {
+             console.log(typeof this.response);
+             var data = '';
+             var u8 = new Uint8Array(this.response);
+             console.log('---- response text ' + u8.byteLength);
+             for (var i = 0; i < u8.length;i++) {
+                 data += ('0' + u8[i].toString(16)).substr(-2);
+             }
+             //console.log(data);
+             window.callPhantom({fileData: data});
+         };
+         xhr.send(downloadInfo.postData);
+         console.log('return after file load');
+         return globalState;
+     }
       var unamel= document.getElementById('enterID-input');
      console.log('stage ' + globalState.stage);
       if (unamel && globalState.stage == 0) {
@@ -103,11 +128,30 @@ page.onError = function(msg,trace) {
 
 var cnt = 0;
 page.onCallback = function(data) {
-  console.log('inCallback ' + data);
-  console.log('inCallback ' + JSON.stringify(data));
+  console.log('inCallback ' + (typeof data));
+    if (data.fileData) {
+        console.log('got file data');
+        try {
+            var ary = new Uint8Array(data.fileData.length / 2);
+            console.log('got file data ary');
+            var str = '';
+            for (var i = 0; i < data.fileData.length; i+=2) {
+                var h = parseInt(data.fileData.substr(i, 2), 16);
+                ary[i / 2] = h;
+                str += String.fromCharCode(h);
+            }
+            console.log('write file');
+            fs.write('test.pdf', str, 'w');
+            fs.write('out.pdf.txt', data.fileData);
+            console.log('done write file');
+        } catch (err) {
+            console.log('error happened in file save ' + err);
+        }
+    }
+  //console.log('inCallback ' + JSON.stringify(data));
   cnt++;
   page.render('done'+cnt+'.png');
-  phantom.exit();
+  //phantom.exit();
 };
 
 page.onResourceRequested = function(request) {
@@ -115,6 +159,7 @@ page.onResourceRequested = function(request) {
     try{
       if (request.url && request.url.indexOf('https://secure.bankofamerica.com/mycommunications/statements/retrievedocument.go') != -1) {
         console.log('Request ' + JSON.stringify(request));
+        globalState.fileDownloadRequest = request;
       }
     } catch (e) {console.log('error ' + e);}
   }
