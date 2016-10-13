@@ -88,7 +88,7 @@ function doStage(page) {
      //window.callPhantom({exit:true});
      return globalState;
    }, username, password,globalState);
-   console.log('end of first call');
+   console.log('end of doStage');
 }
 
 var system = require('system');
@@ -124,11 +124,11 @@ page.onResourceRequested = function(request) {
 };
 page.onResourceReceived = function(response) {
   if (globalState.stage >=6) {
-     console.log(response.contentType);
+     if (response.contentType) console.log(response.contentType);
      var cd = _.find(response.headers, {name:'Content-Disposition'});
      if (cd){
-       console.log(cd.value);
-       console.log(JSON.stringify(response));
+       //console.log(cd.value);
+       //console.log(JSON.stringify(response));
      }
   }
   //console.log('Receive ' + JSON.stringify(response, undefined, 4));
