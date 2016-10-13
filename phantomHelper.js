@@ -27,8 +27,48 @@ function createHelper(initData) {
         if (initData.onLoadFinished) initData.onLoadFinished(page);
     };
 
+    return page;
+}
+
+function createDownloadHelper(initData) {
+    if (!initData.callContext) initData.callContext = {};
+    if (initData.getDownloadFileContext) {
+        var origResReq = initData.onResourceRequested;
+        initData.onResourceRequested = function (request) {
+            initData.callContext._phFileDownloadRequest = initData.getDownloadFileContext(request, initData.callContext);
+            if (origResReq)origResReq(request);
+        }
+    }
+    var oldOnLoadFinished = initData.onLoadFinished;
+    initData.onLoadFinished = function(page) {
+        initData.callContext = page.evaluate(function(callContext) {
+            if(callContext._phFileDownloadRequest) {
+                var downloadInfo = callContext._phFileDownloadRequest;
+                callContext._phFileDownloadRequest = null;
+                console.log('downloading ' + downloadInfo.url);
+                var xhr = new XMLHttpRequest();
+                xhr.open(downloadInfo.method||'POST', downloadInfo.url, true);
+                xhr.responseType = 'arraybuffer';
+                xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+                xhr.onload = function () {
+                    var data = '';
+                    var u8 = new Uint8Array(this.response);
+                    for (var i = 0; i < u8.length;i++) {
+                        data += ('0' + u8[i].toString(16)).substr(-2);
+                    }
+                    window.callPhantom({saveFileData:{data: data}});
+                };
+                if (downloadInfo.postData) xhr.send(downloadInfo.postData);
+                console.log('return after file load');
+            }
+            return callContext;
+        }, initData.callContext);
+        if (oldOnLoadFinished)oldOnLoadFinished(page, initData.callContext);
+    }
+    return createHelper(initData);
 }
 
 module.exports = {
-    createHelper : createHelper
+    createHelper : createHelper,
+    createDownloadHelper : createDownloadHelper
 };

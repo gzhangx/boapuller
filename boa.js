@@ -12,11 +12,11 @@ var globalState = {
   stage : 0,
   questionAnswers :questionAnswers
 };
-function doStage(page) {
+function doStage(page, globalState) {
   var args = system.args;
   var username = args[1];
   var password = args[2];
-   globalState = page.evaluate(function(username, password, globalState){
+   var retstate = page.evaluate(function(username, password, globalState){
      if(globalState.fileDownloadRequest) {
          var downloadInfo = globalState.fileDownloadRequest;
          globalState.fileDownloadRequest = null;
@@ -130,7 +130,8 @@ function doStage(page) {
      //window.callPhantom({exit:true});
      return globalState;
    }, username, password,globalState);
-   console.log('end of doStage');
+   _.assign(globalState, retstate);
+    console.log('end of doStage ' + globalState.stage);
     cnt++;
     page.render('done'+cnt+'.png');
 }
@@ -138,7 +139,8 @@ function doStage(page) {
 var cnt = 0;
 
 
-phantomHelper.createHelper({
+phantomHelper.createDownloadHelper({
+    callContext : globalState,
     url: 'https://secure.bankofamerica.com/login/sign-in/signOnV2Screen.go',
     onLoadFinished: doStage,
     onConsoleMessage: function (msg) {
@@ -157,7 +159,7 @@ phantomHelper.createHelper({
             }
         }
     },
-    onResourceRequested : function(request) {
+    onResourceRequested__ : function(request) {
         if (globalState.stage >= 6) {
             try {
                 if (request.url && request.url.indexOf('https://secure.bankofamerica.com/mycommunications/statements/retrievedocument.go') != -1) {
@@ -169,22 +171,35 @@ phantomHelper.createHelper({
             }
         }
     },
+    getDownloadFileContext : function(request, callContext) {
+        if (callContext.stage >= 6) {
+                if (request.url && request.url.indexOf('https://secure.bankofamerica.com/mycommunications/statements/retrievedocument.go') != -1) {
+                    console.log('Request ' + JSON.stringify(request));
+                    return {
+                        method: 'POST',
+                        url: request.url,
+                        postData: request.postData
+                    };
+                }
+
+        }
+        return false;
+    },
     onCallback : function(data) {
         console.log('inCallback ' + (typeof data));
-        if (data.fileData) {
+        if (data.saveFileData && data.saveFileData.data) {
             console.log('got file data');
+            var fileData = data.saveFileData.data;
             try {
-                var ary = new Uint8Array(data.fileData.data.length / 2);
                 console.log('got file data ary');
                 var str = '';
-                for (var i = 0; i < data.fileData.data.length; i += 2) {
-                    var h = parseInt(data.fileData.data.substr(i, 2), 16);
-                    ary[i / 2] = h;
+                for (var i = 0; i < fileData.length; i += 2) {
+                    var h = parseInt(fileData.substr(i, 2), 16);
                     str += String.fromCharCode(h);
                 }
                 console.log('write file');
-                fs.write('test.pdf' + data.fileData.fileName, str, 'wb');
-                fs.write('out.pdf.txt', data.fileData.data);
+                fs.write('test.pdf', str, 'wb');
+                //fs.write('out.pdf.txt', fileData);
                 console.log('done write file');
             } catch (err) {
                 console.log('error happened in file save ' + err);
