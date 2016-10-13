@@ -1,7 +1,7 @@
 var questionAnswers = require('./qa.json');
 var fs = require('fs');
 var _ = require('lodash');
-var system = require('system');
+//var system = require('system');
 var phantomHelper = require('./phantomHelper');
 setTimeout(function() {
   //window.callPhantom({exit:true});
@@ -10,7 +10,7 @@ setTimeout(function() {
 }, 120*1000);
 
 function doStage(page, globalState) {
-  var args = system.args;
+  //var args = system.args;
   var username = questionAnswers.cr.ua;
   var password = questionAnswers.cr.pw;
    var retstate = page.evaluate(function(username, password, globalState){
@@ -84,7 +84,7 @@ function doStage(page, globalState) {
                       var fname = 'BOA_' + iyymmdd + '.pdf';
                       if (iyymmdd > biggestVal && !globalState.savedFiles[fname]) {
                           //globalState.savedFiles[fname] = true;
-                          globalState._saveFileName = fname;
+                          globalState._saveFileName = 'pdfs/'+fname;
                           biggestVal = iyymmdd;
                           biggest = mo3;
                       }
@@ -116,6 +116,7 @@ var cnt = 0;
 
 var myState = {
     callContext : {
+        savedFiles : {},
         stage : 0,
         questionAnswers :questionAnswers
     },
@@ -157,4 +158,13 @@ var myState = {
         console.log('!!!!! Err ' + msg + ' ' + trace);
     }
 };
+
+var existing = fs.list('./pdfs');
+existing.map(function(v){
+  if (v.indexOf('BOA') == 0) {
+      myState.callContext.savedFiles[v] = true;
+      console.log(JSON.stringify(myState.callContext.savedFiles));
+  }
+});
+
 phantomHelper.createDownloadHelper(myState);
