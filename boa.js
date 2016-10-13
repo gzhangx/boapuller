@@ -1,6 +1,7 @@
 var questionAnswers = require('./qa.json');
 var fs = require('fs');
 var _ = require('lodash');
+var system = require('system');
 var phantomHelper = require('./phantomHelper');
 setTimeout(function() {
   //window.callPhantom({exit:true});
@@ -134,86 +135,7 @@ function doStage(page) {
     page.render('done'+cnt+'.png');
 }
 
-var system = require('system');
-var page = require('webpage').create();
-page.settings.userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.143 Safari/537.36';
-page.onConsoleMessage = function(msg) {
-  console.log('console ==> ' + msg);
-};
-page.onError = function(msg,trace) {
-  console.log('!!!!! Err ' + msg +  ' ' + trace);
-};
-
 var cnt = 0;
-page.onCallback = function(data) {
-  console.log('inCallback ' + (typeof data));
-    if (data.fileData) {
-        console.log('got file data');
-        try {
-            var ary = new Uint8Array(data.fileData.data.length / 2);
-            console.log('got file data ary');
-            var str = '';
-            for (var i = 0; i < data.fileData.data.length; i+=2) {
-                var h = parseInt(data.fileData.data.substr(i, 2), 16);
-                ary[i / 2] = h;
-                str += String.fromCharCode(h);
-            }
-            console.log('write file');
-            fs.write('test.pdf' +data.fileData.fileName, str, 'wb');
-            fs.write('out.pdf.txt', data.fileData.data);
-            console.log('done write file');
-        } catch (err) {
-            console.log('error happened in file save ' + err);
-        }
-    }
-  //console.log('inCallback ' + JSON.stringify(data));
-  cnt++;
-  page.render('done'+cnt+'.png');
-  //phantom.exit();
-};
-
-page.onResourceRequested = function(request) {
-  if (globalState.stage >= 6) {
-    try{
-      if (request.url && request.url.indexOf('https://secure.bankofamerica.com/mycommunications/statements/retrievedocument.go') != -1) {
-        console.log('Request ' + JSON.stringify(request));
-        globalState.fileDownloadRequest = request;
-      }
-    } catch (e) {console.log('error ' + e);}
-  }
-  //console.log('Request ' + JSON.stringify(request));
-  //console.log('Request ' + (request==null?null:request.url));
-  //console.log('.');
-};
-page.onResourceReceived = function(response) {
-  if (globalState.stage >=6) {
-     if (response.contentType) console.log(response.contentType);
-     var cd = _.find(response.headers, {name:'Content-Disposition'});
-     if (cd){
-       //console.log(cd.value);
-       //console.log(JSON.stringify(response));
-     }
-  }
-  //console.log('Receive ' + JSON.stringify(response, undefined, 4));
-  //console.log('x');
-};
-//page.open('https://secure.bankofamerica.com/login/sign-in/signOnV2Screen.go', function(status) {
-//  console.log("Status: " + status);
-//  if(status === "success") {
-//  }
-//});
-page.onLoadStarted = function() {
-  console.log('load started');
-};
-
-
-page.onLoadFinished = function() {
-  cnt++;
-  console.log('load finished ' + page.content.length + ' ' + cnt);
-  doStage(page);
-  //console.log(page.content);
-  page.render('done'+cnt+'.png');
-};
 
 
 phantomHelper.createHelper({
