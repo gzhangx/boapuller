@@ -27,6 +27,9 @@ function createHelper(initData) {
     return page;
 }
 
+///
+/// For save file to happen, need to: add getDownloadFileContext, which return request if need to download, and set
+/// _saveFileName
 function createDownloadHelper(initData) {
     if (!initData.callContext) initData.callContext = {};
     function sub(name, newFunc) {
