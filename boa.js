@@ -65,36 +65,40 @@ function doStage(page, globalState) {
           console.log('document clicked');
       } else if (globalState.stage == 4 && $("[id='documentId0']").length) {
           globalState.stage = 5;
-          $("[id='documentId0']")[0].click();
-          if ($("[id='menuOption3']").length) {
-              var biggest = null;
-              var biggestVal = 0;
-              if (!globalState.savedFiles) globalState.savedFiles = {};
-              var mo3s = $("[id='menuOption3']");
-              for (var moi = 0; moi < mo3s.length; moi++) {
-                  var mo3 = mo3s[moi];
-                  console.log('processing mo3 ' + moi + ' ' + mo3.outerHTML + ' ' + (typeof mo3.outerHTML));
+          if (!window[globalState._jsFileInProgressInd]) {
+              $("[id='documentId0']")[0].click();
+              if ($("[id='menuOption3']").length) {
+                  var biggest = null;
+                  var biggestVal = 0;
+                  if (!globalState.savedFiles) globalState.savedFiles = {};
+                  var mo3s = $("[id='menuOption3']");
+                  for (var moi = 0; moi < mo3s.length; moi++) {
+                      var mo3 = mo3s[moi];
+                      //console.log('processing mo3 ' + moi + ' ' + mo3.outerHTML + ' ' + (typeof mo3.outerHTML));
 
-                  var mmddyyyy = mo3.outerHTML.match(/\d\d\/\d\d\/\d\d\d\d/)[0];
-                  console.log('mmddyyyy = ' + mmddyyyy + ' ' + (typeof mmddyyyy));
-                  var yymmdd = (mmddyyyy.substr(6, 4) + mmddyyyy.substr(0, 2)) + mmddyyyy.substr(3, 2);
-                  console.log('intval is ' + yymmdd);
-                  var iyymmdd = parseInt(yymmdd);
-                  var fname = 'BOA_' + biggestVal + '.pdf';
-                  if (iyymmdd > biggestVal && !globalState.savedFiles[fname]) {
-                      //globalState.savedFiles[fname] = true;
-                      globalState._saveFileName = fname;
-                      biggestVal = iyymmdd;
-                      biggest = mo3;
+                      var mmddyyyy = mo3.outerHTML.match(/\d\d\/\d\d\/\d\d\d\d/)[0];
+                      console.log('mmddyyyy = ' + mmddyyyy + ' ' + (typeof mmddyyyy));
+                      var yymmdd = (mmddyyyy.substr(6, 4) + mmddyyyy.substr(0, 2)) + mmddyyyy.substr(3, 2);
+                      console.log('intval is ' + yymmdd);
+                      var iyymmdd = parseInt(yymmdd);
+                      var fname = 'BOA_' + iyymmdd + '.pdf';
+                      if (iyymmdd > biggestVal && !globalState.savedFiles[fname]) {
+                          //globalState.savedFiles[fname] = true;
+                          globalState._saveFileName = fname;
+                          biggestVal = iyymmdd;
+                          biggest = mo3;
+                      }
                   }
-              }
-              if (biggest) {
-                  globalState.savedFiles[globalState._saveFileName] = true;
-                  console.log('download actual click ' + globalState._saveFileName);
-                  biggest.click();
-              }
+                  if (biggest) {
+                      globalState.savedFiles[globalState._saveFileName] = true;
+                      console.log('download actual click ' + globalState._saveFileName);
+                      biggest.click();
+                  }
 
-              console.log('donwload clicked');
+                  console.log('donwload clicked');
+              }
+          } else {
+              console.log('in downloading');
           }
           console.log('document id0');
       }
