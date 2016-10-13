@@ -10,11 +10,12 @@ setTimeout(function() {
 }, 120*1000);
 
 function doStage(page, globalState) {
+ console.log('doing stage ' + globalState.stage);
   //var args = system.args;
   var username = questionAnswers.cr.ua;
   var password = questionAnswers.cr.pw;
    var retstate = page.evaluate(function(username, password, globalState){
-
+      try{
       var unamel= document.getElementById('enterID-input');
       if (unamel && globalState.stage == 0) {
         //login
@@ -102,11 +103,11 @@ function doStage(page, globalState) {
           }
           console.log('document id0');
       }
-
+      } catch (exx) {console.log('errro in js '  + exx);}
      //window.callPhantom({exit:true});
      return globalState;
    }, username, password,globalState);
-   _.assign(globalState, retstate);
+    if (retstate) _.assign(globalState, retstate);
     //console.log('end of doStage ' + globalState.stage);
     cnt++;
     page.render('done'+cnt+'.png');
@@ -121,7 +122,7 @@ var myState = {
         questionAnswers :questionAnswers
     },
     url: 'https://secure.bankofamerica.com/login/sign-in/signOnV2Screen.go',
-    onLoadFinished: doStage,
+    onProcessing: doStage,
     onConsoleMessage: function (msg) {
         console.log('console==>' + msg);
     },

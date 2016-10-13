@@ -21,6 +21,13 @@ function createHelper(initData) {
 
 
     page.onLoadFinished = function () {
+        if (!initData._loadFinished) initData._loadFinished = 0;
+        initData._loadFinished++;
+        if (initData.onLoadFinished) initData.onLoadFinished(page);
+    };
+    page.onLoadStarted = function () {
+        if (!initData._loadStarted)initData._loadStarted = 0;
+        initData._loadStarted++;
         if (initData.onLoadFinished) initData.onLoadFinished(page);
     };
 
@@ -48,7 +55,7 @@ function createDownloadHelper(initData) {
         });
     }
 
-    sub('onLoadFinished', function (page) {
+    sub('onProcessing', function (page) {
         initData.callContext = page.evaluate(function (callContext) {
             if (callContext._phFileDownloadRequest) {
                 var downloadInfo = callContext._phFileDownloadRequest;
@@ -59,7 +66,11 @@ function createDownloadHelper(initData) {
                 xhr.open(downloadInfo.method || 'POST', downloadInfo.url, true);
                 xhr.responseType = 'arraybuffer';
                 xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+                xhr.onreadystatechange= function(e) { 
+ console.log('onreadystagechange -------- ' + xhr.readyState);
+   };
                 xhr.onload = function () {
+                    console.log('xhr returned---------------');
                     var data = '';
                     var u8 = new Uint8Array(this.response);
                     for (var i = 0; i < u8.length; i++) {
@@ -69,7 +80,7 @@ function createDownloadHelper(initData) {
                     window[callContext._jsFileInProgressInd] = false;
                 };
                 if (downloadInfo.postData) xhr.send(downloadInfo.postData);
-                console.log('return after file load');
+                console.log('return after file load ' + downloadInfo.postData);
             }
             return callContext;
         }, initData.callContext);
@@ -94,7 +105,19 @@ function createDownloadHelper(initData) {
             phantom.exit();
         }
     });
-    return createHelper(initData);
+    var page = createHelper(initData);
+    function doProcessing(){
+      if (!initData._loadStarted) initData._loadStarted = 0;
+      if (!initData._loadFinished) initData._loadFinished = 0;
+      if (initData._loadStarted == initData._loadFinished) {
+        initData.onProcessing(page, initData.callContext);
+      } else {
+        //console.log('----- bypassed processing ' + initData._loadStarted+' ' + initData._loadFinished);
+      }
+      setTimeout(doProcessing, 1000);
+    };
+    setTimeout(doProcessing, 1000);
+    return page;
 }
 
 module.exports = {
