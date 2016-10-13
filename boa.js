@@ -1,6 +1,7 @@
 var questionAnswers = require('./qa.json');
 var fs = require('fs');
 var _ = require('lodash');
+var phantomHelper = require('./phantomHelper');
 setTimeout(function() {
   //window.callPhantom({exit:true});
   console.log('timeout, exiting');
@@ -123,15 +124,14 @@ function doStage(page) {
         },0);
         globalState.stage = 6;
         console.log('download clicked');
-        setTimeout(function() {
-          window.callPhantom({exit:true});
-        }, 2500);
       }
 
      //window.callPhantom({exit:true});
      return globalState;
    }, username, password,globalState);
    console.log('end of doStage');
+    cnt++;
+    page.render('done'+cnt+'.png');
 }
 
 var system = require('system');
@@ -197,11 +197,11 @@ page.onResourceReceived = function(response) {
   //console.log('Receive ' + JSON.stringify(response, undefined, 4));
   //console.log('x');
 };
-page.open('https://secure.bankofamerica.com/login/sign-in/signOnV2Screen.go', function(status) {
-  console.log("Status: " + status);
-  if(status === "success") {
-  }
-});
+//page.open('https://secure.bankofamerica.com/login/sign-in/signOnV2Screen.go', function(status) {
+//  console.log("Status: " + status);
+//  if(status === "success") {
+//  }
+//});
 page.onLoadStarted = function() {
   console.log('load started');
 };
@@ -214,3 +214,66 @@ page.onLoadFinished = function() {
   //console.log(page.content);
   page.render('done'+cnt+'.png');
 };
+
+
+phantomHelper.createHelper({
+    url: 'https://secure.bankofamerica.com/login/sign-in/signOnV2Screen.go',
+    onLoadFinished: doStage,
+    onConsoleMessage: function (msg) {
+        console.log('console==>' + msg);
+    },
+    onLoadStarted: function () {
+        console.log('load started');
+    },
+    onResourceReceived : function(response) {
+        if (globalState.stage >= 6) {
+            if (response.contentType) console.log(response.contentType);
+            var cd = _.find(response.headers, {name: 'Content-Disposition'});
+            if (cd) {
+                //console.log(cd.value);
+                //console.log(JSON.stringify(response));
+            }
+        }
+    },
+    onResourceRequested : function(request) {
+        if (globalState.stage >= 6) {
+            try {
+                if (request.url && request.url.indexOf('https://secure.bankofamerica.com/mycommunications/statements/retrievedocument.go') != -1) {
+                    console.log('Request ' + JSON.stringify(request));
+                    globalState.fileDownloadRequest = request;
+                }
+            } catch (e) {
+                console.log('error ' + e);
+            }
+        }
+    },
+    onCallback : function(data) {
+        console.log('inCallback ' + (typeof data));
+        if (data.fileData) {
+            console.log('got file data');
+            try {
+                var ary = new Uint8Array(data.fileData.data.length / 2);
+                console.log('got file data ary');
+                var str = '';
+                for (var i = 0; i < data.fileData.data.length; i += 2) {
+                    var h = parseInt(data.fileData.data.substr(i, 2), 16);
+                    ary[i / 2] = h;
+                    str += String.fromCharCode(h);
+                }
+                console.log('write file');
+                fs.write('test.pdf' + data.fileData.fileName, str, 'wb');
+                fs.write('out.pdf.txt', data.fileData.data);
+                console.log('done write file');
+            } catch (err) {
+                console.log('error happened in file save ' + err);
+            }
+        }
+        //console.log('inCallback ' + JSON.stringify(data));
+        cnt++;
+        page.render('done' + cnt + '.png');
+        //phantom.exit();
+    },
+    onError : function(msg,trace) {
+        console.log('!!!!! Err ' + msg + ' ' + trace);
+    }
+});
