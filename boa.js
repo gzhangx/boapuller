@@ -19,7 +19,7 @@ function doStage(page) {
          var downloadInfo = globalState.fileDownloadRequest;
          globalState.fileDownloadRequest = null;
          console.log('downloading ' + downloadInfo.url);
-         console.log('downloading data ' + downloadInfo.postData);
+         //console.log('downloading data ' + downloadInfo.postData);
          var xhr = new XMLHttpRequest();
          xhr.open('POST', downloadInfo.url, true);
          xhr.responseType = 'arraybuffer';
@@ -86,6 +86,7 @@ function doStage(page) {
       } else if (globalState.stage == 3 && $("[title='Statements & Documents']").length) {
         console.log('stage 3');
         setTimeout(function() {
+            console.log('doc length = ' + $("[title='Statements & Documents']").length +' ' + $("[title='Statements & Documents']")[0]);
           $("[title='Statements & Documents']")[0].click();
         },0);
         globalState.stage = 4;
@@ -94,9 +95,26 @@ function doStage(page) {
         globalState.stage = 5;
           $("[id='documentId0']")[0].click();
           if ($("[id='menuOption3']").length) {
-            $("[id='menuOption3']")[0].click();
-            globalState.stage = 6;
-            console.log('donwload clicked');
+              var biggest = null;
+              var biggestVal = 0;
+              $("[id='menuOption3']").map(function (cnt,mo3) {
+                  console.log('processing mo3 ' + mo3.outerHTML+' ' + (typeof mo3.outerHTML));
+
+                  var mmddyyyy = mo3.outerHTML.match(/\d\d\/\d\d\/\d\d\d\d/)[0];
+                  console.log('mmddyyyy = ' + mmddyyyy+ ' ' + (typeof mmddyyyy));
+                  var yymmdd = (mmddyyyy.substr(3, 4) + mmddyyyy.substr(2, 2) + mmddyyyy.substr(0, 2));
+                  console.log('intval is ' + yymmdd);
+                  var iyymmdd = parseInt(yymmdd);
+                  if (iyymmdd > biggestVal) {
+                      biggestVal = iyymmdd;
+                      biggest = mo3;
+                  }
+              });
+              biggest.click();
+              globalState.fileSeq = biggest;
+              globalState.stage = 6;
+              console.log('donwload clicked');
+              //.match(/\d\d\/\d\d\/\d\d\d\d/)
           }
         console.log('document id0');
       } else if (globalState.stage == 5 && $("[id='menuOption3']").length) {
@@ -141,7 +159,7 @@ page.onCallback = function(data) {
                 str += String.fromCharCode(h);
             }
             console.log('write file');
-            fs.write('test.pdf', str, 'w');
+            fs.write('test.pdf', str, 'wb');
             fs.write('out.pdf.txt', data.fileData);
             console.log('done write file');
         } catch (err) {
