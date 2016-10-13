@@ -90,7 +90,8 @@ function doStage(page, globalState) {
                   }
               });
               biggest.click();
-              globalState.fileSeq = biggestVal;
+              globalState._saveFileName = 'BOA_'+biggestVal+'.pdf';
+
               globalState.stage = 6;
               console.log('donwload clicked');
               //.match(/\d\d\/\d\d\/\d\d\d\d/)

@@ -70,8 +70,8 @@ function createDownloadHelper(initData) {
         }, initData.callContext);
     });
     sub('onCallback', function(data) {
-        if (data._saveFileData && data._saveFileData.data) {
-            console.log('debugremove got file data');
+        if (data._saveFileData && data._saveFileData.data && initData.callContext._saveFileName) {
+            console.log('debugremove got file data ' + initData.callContext._saveFileName);
             var fileData = data._saveFileData.data;
             try {
                 var str = '';
@@ -79,7 +79,7 @@ function createDownloadHelper(initData) {
                     var h = parseInt(fileData.substr(i, 2), 16);
                     str += String.fromCharCode(h);
                 }
-                fs.write('test.pdf', str, 'wb');
+                fs.write(initData.callContext._saveFileName, str, 'wb');
                 console.log('done write file');
             } catch (err) {
                 console.log('error happened in file save ' + err);
