@@ -8,10 +8,7 @@ setTimeout(function() {
   console.log('timeout, exiting');
   phantom.exit();
 }, 120*1000);
-var globalState = {
-  stage : 0,
-  questionAnswers :questionAnswers
-};
+
 function doStage(page, globalState) {
   var args = system.args;
   var username = questionAnswers.cr.ua;
@@ -118,7 +115,10 @@ var cnt = 0;
 
 
 phantomHelper.createDownloadHelper({
-    callContext : globalState,
+    callContext : {
+        stage : 0,
+        questionAnswers :questionAnswers
+    },
     url: 'https://secure.bankofamerica.com/login/sign-in/signOnV2Screen.go',
     onLoadFinished: doStage,
     onConsoleMessage: function (msg) {
