@@ -17,30 +17,7 @@ function doStage(page, globalState) {
   var username = args[1];
   var password = args[2];
    var retstate = page.evaluate(function(username, password, globalState){
-     if(globalState.fileDownloadRequest) {
-         var downloadInfo = globalState.fileDownloadRequest;
-         globalState.fileDownloadRequest = null;
-         console.log('downloading ' + downloadInfo.url);
-         //console.log('downloading data ' + downloadInfo.postData);
-         var xhr = new XMLHttpRequest();
-         xhr.open('POST', downloadInfo.url, true);
-         xhr.responseType = 'arraybuffer';
-         xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-         xhr.onload = function () {
-             console.log(typeof this.response);
-             var data = '';
-             var u8 = new Uint8Array(this.response);
-             console.log('---- response text ' + u8.byteLength);
-             for (var i = 0; i < u8.length;i++) {
-                 data += ('0' + u8[i].toString(16)).substr(-2);
-             }
-             //console.log(data);
-             window.callPhantom({fileData:{data: data, fileName :globalState.fileSeq+'.pdf'}});
-         };
-         xhr.send(downloadInfo.postData);
-         console.log('return after file load');
-         return globalState;
-     }
+
       var unamel= document.getElementById('enterID-input');
      console.log('stage ' + globalState.stage);
       if (unamel && globalState.stage == 0) {
@@ -187,25 +164,6 @@ phantomHelper.createDownloadHelper({
     },
     onCallback : function(data) {
         console.log('inCallback ' + (typeof data));
-        if (data.saveFileData && data.saveFileData.data) {
-            console.log('got file data');
-            var fileData = data.saveFileData.data;
-            try {
-                console.log('got file data ary');
-                var str = '';
-                for (var i = 0; i < fileData.length; i += 2) {
-                    var h = parseInt(fileData.substr(i, 2), 16);
-                    str += String.fromCharCode(h);
-                }
-                console.log('write file');
-                fs.write('test.pdf', str, 'wb');
-                //fs.write('out.pdf.txt', fileData);
-                console.log('done write file');
-            } catch (err) {
-                console.log('error happened in file save ' + err);
-            }
-        }
-        //console.log('inCallback ' + JSON.stringify(data));
         cnt++;
         page.render('done' + cnt + '.png');
         //phantom.exit();

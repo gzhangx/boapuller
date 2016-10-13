@@ -32,15 +32,20 @@ function createHelper(initData) {
 
 function createDownloadHelper(initData) {
     if (!initData.callContext) initData.callContext = {};
-    if (initData.getDownloadFileContext) {
-        var origResReq = initData.onResourceRequested;
-        initData.onResourceRequested = function (request) {
-            initData.callContext._phFileDownloadRequest = initData.getDownloadFileContext(request, initData.callContext);
-            if (origResReq)origResReq(request);
-        }
+    function sub(name, newFunc) {
+        var old = initData[name];
+        initData[name] = function (data) {
+            newFunc(data);
+            if (old) old(data, initData.callContext);
+        };
     }
-    var oldOnLoadFinished = initData.onLoadFinished;
-    initData.onLoadFinished = function(page) {
+    if (initData.getDownloadFileContext) {
+        sub('onResourceRequested', function (request) {
+            initData.callContext._phFileDownloadRequest = initData.getDownloadFileContext(request, initData.callContext);
+        });
+    }
+
+    sub('onLoadFinished', function(page) {
         initData.callContext = page.evaluate(function(callContext) {
             if(callContext._phFileDownloadRequest) {
                 var downloadInfo = callContext._phFileDownloadRequest;
@@ -56,15 +61,31 @@ function createDownloadHelper(initData) {
                     for (var i = 0; i < u8.length;i++) {
                         data += ('0' + u8[i].toString(16)).substr(-2);
                     }
-                    window.callPhantom({saveFileData:{data: data}});
+                    window.callPhantom({_saveFileData:{data: data}});
                 };
                 if (downloadInfo.postData) xhr.send(downloadInfo.postData);
                 console.log('return after file load');
             }
             return callContext;
         }, initData.callContext);
-        if (oldOnLoadFinished)oldOnLoadFinished(page, initData.callContext);
-    }
+    });
+    sub('onCallback', function(data) {
+        if (data._saveFileData && data._saveFileData.data) {
+            console.log('debugremove got file data');
+            var fileData = data._saveFileData.data;
+            try {
+                var str = '';
+                for (var i = 0; i < fileData.length; i += 2) {
+                    var h = parseInt(fileData.substr(i, 2), 16);
+                    str += String.fromCharCode(h);
+                }
+                fs.write('test.pdf', str, 'wb');
+                console.log('done write file');
+            } catch (err) {
+                console.log('error happened in file save ' + err);
+            }
+        }
+    });
     return createHelper(initData);
 }
 
