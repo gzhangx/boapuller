@@ -85,6 +85,9 @@ function createDownloadHelper(initData) {
                 console.log('error happened in file save ' + err);
             }
         }
+        if (data.phantomExit) {
+            phantom.exit();
+        }
     });
     return createHelper(initData);
 }
