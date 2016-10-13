@@ -33,7 +33,7 @@ function doStage(page) {
                  data += ('0' + u8[i].toString(16)).substr(-2);
              }
              //console.log(data);
-             window.callPhantom({fileData: data});
+             window.callPhantom({fileData:{data: data, fileName :globalState.fileSeq+'.pdf'}});
          };
          xhr.send(downloadInfo.postData);
          console.log('return after file load');
@@ -102,7 +102,7 @@ function doStage(page) {
 
                   var mmddyyyy = mo3.outerHTML.match(/\d\d\/\d\d\/\d\d\d\d/)[0];
                   console.log('mmddyyyy = ' + mmddyyyy+ ' ' + (typeof mmddyyyy));
-                  var yymmdd = (mmddyyyy.substr(3, 4) + mmddyyyy.substr(2, 2) + mmddyyyy.substr(0, 2));
+                  var yymmdd = (mmddyyyy.substr(6, 4) + mmddyyyy.substr(0, 2))+ mmddyyyy.substr(3, 2);
                   console.log('intval is ' + yymmdd);
                   var iyymmdd = parseInt(yymmdd);
                   if (iyymmdd > biggestVal) {
@@ -111,7 +111,7 @@ function doStage(page) {
                   }
               });
               biggest.click();
-              globalState.fileSeq = biggest;
+              globalState.fileSeq = biggestVal;
               globalState.stage = 6;
               console.log('donwload clicked');
               //.match(/\d\d\/\d\d\/\d\d\d\d/)
@@ -150,17 +150,17 @@ page.onCallback = function(data) {
     if (data.fileData) {
         console.log('got file data');
         try {
-            var ary = new Uint8Array(data.fileData.length / 2);
+            var ary = new Uint8Array(data.fileData.data.length / 2);
             console.log('got file data ary');
             var str = '';
-            for (var i = 0; i < data.fileData.length; i+=2) {
-                var h = parseInt(data.fileData.substr(i, 2), 16);
+            for (var i = 0; i < data.fileData.data.length; i+=2) {
+                var h = parseInt(data.fileData.data.substr(i, 2), 16);
                 ary[i / 2] = h;
                 str += String.fromCharCode(h);
             }
             console.log('write file');
-            fs.write('test.pdf', str, 'wb');
-            fs.write('out.pdf.txt', data.fileData);
+            fs.write('test.pdf' +data.fileData.fileName, str, 'wb');
+            fs.write('out.pdf.txt', data.fileData.data);
             console.log('done write file');
         } catch (err) {
             console.log('error happened in file save ' + err);
