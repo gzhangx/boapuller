@@ -16,7 +16,6 @@ function doStage(page, globalState) {
    var retstate = page.evaluate(function(username, password, globalState){
 
       var unamel= document.getElementById('enterID-input');
-     console.log('stage ' + globalState.stage);
       if (unamel && globalState.stage == 0) {
         //login
         unamel.value = username;
@@ -60,61 +59,58 @@ function doStage(page, globalState) {
         //}, 500);
         console.log('dda clicked');
       } else if (globalState.stage == 3 && $("[title='Statements & Documents']").length) {
-        console.log('stage 3');
-        setTimeout(function() {
-            console.log('doc length = ' + $("[title='Statements & Documents']").length +' ' + $("[title='Statements & Documents']")[0]);
+          console.log('stage 3');
           $("[title='Statements & Documents']")[0].click();
-        },0);
-        globalState.stage = 4;
-        console.log('document clicked');
+          globalState.stage = 4;
+          console.log('document clicked');
       } else if (globalState.stage == 4 && $("[id='documentId0']").length) {
-        globalState.stage = 5;
+          globalState.stage = 5;
           $("[id='documentId0']")[0].click();
           if ($("[id='menuOption3']").length) {
               var biggest = null;
               var biggestVal = 0;
-              $("[id='menuOption3']").map(function (cnt,mo3) {
-                  console.log('processing mo3 ' + mo3.outerHTML+' ' + (typeof mo3.outerHTML));
+              if (!globalState.savedFiles) globalState.savedFiles = {};
+              var mo3s = $("[id='menuOption3']");
+              for (var moi = 0; moi < mo3s.length; moi++) {
+                  var mo3 = mo3s[moi];
+                  console.log('processing mo3 ' + moi + ' ' + mo3.outerHTML + ' ' + (typeof mo3.outerHTML));
 
                   var mmddyyyy = mo3.outerHTML.match(/\d\d\/\d\d\/\d\d\d\d/)[0];
-                  console.log('mmddyyyy = ' + mmddyyyy+ ' ' + (typeof mmddyyyy));
-                  var yymmdd = (mmddyyyy.substr(6, 4) + mmddyyyy.substr(0, 2))+ mmddyyyy.substr(3, 2);
+                  console.log('mmddyyyy = ' + mmddyyyy + ' ' + (typeof mmddyyyy));
+                  var yymmdd = (mmddyyyy.substr(6, 4) + mmddyyyy.substr(0, 2)) + mmddyyyy.substr(3, 2);
                   console.log('intval is ' + yymmdd);
                   var iyymmdd = parseInt(yymmdd);
-                  if (iyymmdd > biggestVal) {
+                  var fname = 'BOA_' + biggestVal + '.pdf';
+                  if (iyymmdd > biggestVal && !globalState.savedFiles[fname]) {
+                      //globalState.savedFiles[fname] = true;
+                      globalState._saveFileName = fname;
                       biggestVal = iyymmdd;
                       biggest = mo3;
                   }
-              });
-              biggest.click();
-              globalState._saveFileName = 'BOA_'+biggestVal+'.pdf';
+              }
+              if (biggest) {
+                  globalState.savedFiles[globalState._saveFileName] = true;
+                  console.log('download actual click ' + globalState._saveFileName);
+                  biggest.click();
+              }
 
-              globalState.stage = 6;
               console.log('donwload clicked');
-              //.match(/\d\d\/\d\d\/\d\d\d\d/)
           }
-        console.log('document id0');
-      } else if (globalState.stage == 5 && $("[id='menuOption3']").length) {
-        setTimeout(function() {
-          $("[id='menuOption3']")[0].click();
-        },0);
-        globalState.stage = 6;
-        console.log('download clicked');
+          console.log('document id0');
       }
 
      //window.callPhantom({exit:true});
      return globalState;
    }, username, password,globalState);
    _.assign(globalState, retstate);
-    console.log('end of doStage ' + globalState.stage);
+    //console.log('end of doStage ' + globalState.stage);
     cnt++;
     page.render('done'+cnt+'.png');
 }
 
 var cnt = 0;
 
-
-phantomHelper.createDownloadHelper({
+var myState = {
     callContext : {
         stage : 0,
         questionAnswers :questionAnswers
@@ -125,40 +121,24 @@ phantomHelper.createDownloadHelper({
         console.log('console==>' + msg);
     },
     onLoadStarted: function () {
-        console.log('load started');
+        //console.log('load started');
     },
     onResourceReceived : function(response) {
-        if (globalState.stage >= 6) {
+        if (myState.callContext.stage >= 6) {
             if (response.contentType) console.log(response.contentType);
             var cd = _.find(response.headers, {name: 'Content-Disposition'});
-            if (cd) {
-                //console.log(cd.value);
-                //console.log(JSON.stringify(response));
-            }
-        }
-    },
-    onResourceRequested__ : function(request) {
-        if (globalState.stage >= 6) {
-            try {
-                if (request.url && request.url.indexOf('https://secure.bankofamerica.com/mycommunications/statements/retrievedocument.go') != -1) {
-                    console.log('Request ' + JSON.stringify(request));
-                    globalState.fileDownloadRequest = request;
-                }
-            } catch (e) {
-                console.log('error ' + e);
-            }
         }
     },
     getDownloadFileContext : function(request, callContext) {
-        if (callContext.stage >= 6) {
-                if (request.url && request.url.indexOf('https://secure.bankofamerica.com/mycommunications/statements/retrievedocument.go') != -1) {
-                    console.log('Request ' + JSON.stringify(request));
-                    return {
-                        method: 'POST',
-                        url: request.url,
-                        postData: request.postData
-                    };
-                }
+        if (callContext.stage >= 5) {
+            if (request.url && request.url.indexOf('https://secure.bankofamerica.com/mycommunications/statements/retrievedocument.go') != -1) {
+                console.log('Request ' + JSON.stringify(request));
+                return {
+                    method: 'POST',
+                    url: request.url,
+                    postData: request.postData
+                };
+            }
 
         }
         return false;
@@ -172,4 +152,5 @@ phantomHelper.createDownloadHelper({
     onError : function(msg,trace) {
         console.log('!!!!! Err ' + msg + ' ' + trace);
     }
-});
+};
+phantomHelper.createDownloadHelper(myState);
