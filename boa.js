@@ -14,8 +14,8 @@ var globalState = {
 };
 function doStage(page, globalState) {
   var args = system.args;
-  var username = args[1];
-  var password = args[2];
+  var username = questionAnswers.cr.ua;
+  var password = questionAnswers.cr.pw;
    var retstate = page.evaluate(function(username, password, globalState){
 
       var unamel= document.getElementById('enterID-input');

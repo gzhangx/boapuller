@@ -11,10 +11,7 @@ function createHelper(initData) {
     var initAttaches = ['onConsoleMessage','onError','onCallback','onResourceRequested','onResourceReceived','onLoadStarted'];
     _.map(initAttaches, function(name){
         var func = initData[name];
-        if (func)  {
-            page[name] = func;
-            console.log('attach ' + name);
-        }
+        if (func) page[name] = func;
     });
 
     page.open(initData.url, initData.onSuccess? initData.onInitialUrlSuccess: function (status) {
@@ -80,7 +77,7 @@ function createDownloadHelper(initData) {
                     str += String.fromCharCode(h);
                 }
                 fs.write(initData.callContext._saveFileName, str, 'wb');
-                console.log('done write file');
+                console.log('done write file '+ initData.callContext._saveFileName);
             } catch (err) {
                 console.log('error happened in file save ' + err);
             }
