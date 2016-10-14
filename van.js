@@ -35,7 +35,8 @@ function doStage(page, globalState) {
                     console.log('passcode verify');
                 } else  {
                     console.log('waiting for passcoce');
-                    //globalState.stage = 2;
+                    globalState.stage = 2;
+                    window.location = 'https://personal.vanguard.com/us/Statements';
                     return globalState;
                 }
             } else if (globalState.stage == 2) {
@@ -43,6 +44,21 @@ function doStage(page, globalState) {
                 //window.location = 'https://personal.vanguard.com/us/Statements';
                 //window.location = 'https://personal.vanguard.com/my-accounts/account-overview/balances';
                 console.log('redirecting to statements');
+            }else if (globalState.stage == 3) {
+                if (!window[globalState._jsFileInProgressInd]) {
+                    var rows = document.getElementById('StmtSummaryForm:stmtDataTable').children[1].children;
+                    for (var i = 1; i < rows.length; i++) {
+                        var row = rows[i]
+                        console.log(row);
+                        var click = row.children[2].children[0].children[0].children[0].children[0].children[0];
+                        if (globalState.documentId == i) {
+                            console.log('date = ' + row.children[0].innerHTML + ' ' + row.children[1].innerHTML + ' ' + click);
+                            click.click();
+                            console.log('downloading ' + globalState.documentId);
+                            globalState._saveFileName = 'savedpdf' + globalState.documentId + '.pdf';
+                        }
+                    }
+                } else console.log('downd in prog');
             }
         } catch (exx) {console.log('errro in js '  + exx);}
         //window.callPhantom({exit:true});
@@ -51,6 +67,7 @@ function doStage(page, globalState) {
     if (retstate) _.assign(globalState, retstate);
     //console.log('end of doStage ' + globalState.stage);
     cnt++;
+    //page.render('done' + cnt+'.png');
     page.render('done.png');
 }
 
@@ -60,7 +77,7 @@ var myState = {
     callContext : {
         savedFiles : {},
         stage : 0,
-        documentId : 0,
+        documentId : 1,
         cr: qa.vancr
     },
     url: 'https://investor.vanguard.com/my-account/log-on',
@@ -68,14 +85,16 @@ var myState = {
     onConsoleMessage: function (msg) {
         console.log('console==>' + msg);
     },
+    onResourceReceived : function(response) {
+        //console.log(response.url);
+    },
     getDownloadFileContext : function(request, callContext) {
-        if (callContext.stage >= 5) {
-            if (request.url && request.url.indexOf('https://secure.bankofamerica.com/mycommunications/statements/retrievedocument.go') != -1) {
-                console.log('=====>>>>>>Request ' + request.postData);//+' ' + request.url);
+        if (callContext.stage == 3) {
+            if (request.url && request.url.indexOf('https://personal.vanguard.com/us/StmtCnfmViewPDFImage?') != -1) {
+                console.log('=====>>>>>>Request ' + request.url);//+' ' + request.url);
                 return {
-                    method: 'POST',
-                    url: request.url,
-                    postData: request.postData
+                    method: 'GET',
+                    url: request.url
                 };
             }
 
