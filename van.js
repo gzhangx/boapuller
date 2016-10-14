@@ -49,16 +49,20 @@ function doStage(page, globalState) {
                     var rows = document.getElementById('StmtSummaryForm:stmtDataTable').children[1].children;
                     for (var i = 1; i < rows.length; i++) {
                         var row = rows[i]
-                        console.log(row);
                         var click = row.children[2].children[0].children[0].children[0].children[0].children[0];
                         if (globalState.documentId == i) {
                             console.log('date = ' + row.children[0].innerHTML + ' ' + row.children[1].innerHTML + ' ' + click);
                             click.click();
                             console.log('downloading ' + globalState.documentId);
                             globalState._saveFileName = 'savedpdf' + globalState.documentId + '.pdf';
+                            globalState.stage == 4;
                         }
                     }
                 } else console.log('downd in prog');
+            }else if (globalState.stage == 4 ) {
+                console.log('stage 4 processing is ==--------- ' +window[globalState._jsFileInProgressInd]);
+                if(!window[globalState._jsFileInProgressInd]) globalState.stage = 3;
+
             }
         } catch (exx) {console.log('errro in js '  + exx);}
         //window.callPhantom({exit:true});
@@ -91,7 +95,7 @@ var myState = {
     getDownloadFileContext : function(request, callContext) {
         if (callContext.stage == 3) {
             if (request.url && request.url.indexOf('https://personal.vanguard.com/us/StmtCnfmViewPDFImage?') != -1) {
-                console.log('=====>>>>>>Request ' + request.url);//+' ' + request.url);
+                console.log('=====>>>>>>DownloadRequest ' + request.url);//+' ' + request.url);
                 return {
                     method: 'GET',
                     url: request.url
