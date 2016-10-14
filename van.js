@@ -55,16 +55,20 @@ function doStage(page, globalState) {
                 if (!window[globalState._jsFileInProgressInd]) {
                     var rows = document.getElementById('StmtSummaryForm:stmtDataTable').children[1].children;
                     for (var i = 1; i < rows.length; i++) {
-                        var row = rows[i]
-                        var click = row.children[2].children[0].children[0].children[0].children[0].children[0];
-                        if (globalState.documentId == i) {
-                            console.log('date = ' + row.children[0].innerHTML + ' ' + row.children[1].innerHTML);
-                            window[globalState._jsFileInProgressInd] = true;
-                            click.click();
-                            globalState._curFileName = getFileName(row.children);
-                            globalState._saveFileName = dirName + globalState._curFileName;
-                            console.log('downloading ' + globalState.documentId + ' ' + globalState._saveFileName);
-                            globalState.stage == 4;
+                        var row = rows[i]                        
+                        //if (globalState.documentId == i)
+                        {                            
+                            var click = row.children[2].children[0].children[0].children[0].children[0].children[0];
+                            var fname = getFileName(row.children);                            
+                            if (!globalState.savedFiles[fname]) {                                
+                                globalState._saveFileName = dirName + fname;                                
+                                window[globalState._jsFileInProgressInd] = true;
+                                click.click();
+                                globalState.savedFiles[fname] = true;
+                                console.log('downloading ' + globalState.documentId + ' ' + globalState._saveFileName);
+                                globalState.stage == 4;
+                                break;
+                            }                                                        
                         }
                     }
                 } else console.log('downd in prog');
