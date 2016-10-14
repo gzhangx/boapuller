@@ -111,6 +111,7 @@ function createDownloadHelper(initData) {
       if (!initData._loadStarted) initData._loadStarted = 0;
       if (!initData._loadFinished) initData._loadFinished = 0;
       if (initData._loadStarted == initData._loadFinished) {
+          console.log('--------------- o  processing ' + initData.callContext._phFileDownloadRequest);
         initData.onProcessing(page, initData.callContext);
       } else {
         //console.log('----- bypassed processing ' + initData._loadStarted+' ' + initData._loadFinished);
