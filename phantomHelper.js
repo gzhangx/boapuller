@@ -61,13 +61,14 @@ function createDownloadHelper(initData) {
                 var downloadInfo = callContext._phFileDownloadRequest;
                 callContext._phFileDownloadRequest = null;
                 window[callContext._jsFileInProgressInd] = true;
-                console.log('downloading ' + downloadInfo.url);
+                //console.log('downloading ' + downloadInfo.url);
+                console.log('downloading ====>>>>>>>>>>>' + downloadInfo.postData);
                 var xhr = new XMLHttpRequest();
                 xhr.open(downloadInfo.method || 'POST', downloadInfo.url, true);
                 xhr.responseType = 'arraybuffer';
                 xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
                 xhr.onreadystatechange= function(e) { 
- console.log('onreadystagechange -------- ' + xhr.readyState);
+ //console.log('onreadystagechange -------- ' + xhr.readyState);
    };
                 xhr.onload = function () {
                     console.log('xhr returned---------------');
@@ -114,7 +115,7 @@ function createDownloadHelper(initData) {
       } else {
         //console.log('----- bypassed processing ' + initData._loadStarted+' ' + initData._loadFinished);
       }
-      setTimeout(doProcessing, 1000);
+      setTimeout(doProcessing, 500);
     };
     setTimeout(doProcessing, 1000);
     return page;

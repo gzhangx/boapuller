@@ -86,12 +86,14 @@ function doStage(page, globalState) {
                       if (iyymmdd > biggestVal && !globalState.savedFiles[fname]) {
                           //globalState.savedFiles[fname] = true;
                           globalState._saveFileName = 'pdfs/'+fname;
+                          globalState._dictSaveFileName = fname;
                           biggestVal = iyymmdd;
                           biggest = mo3;
                       }
                   }
                   if (biggest) {
-                      globalState.savedFiles[globalState._saveFileName] = true;
+                      //console.log('processing mo3 ' + biggest.outerHTML);
+                      globalState.savedFiles[globalState._dictSaveFileName] = true;
                       console.log('download actual click ' + globalState._saveFileName);
                       biggest.click();
                   }
@@ -103,6 +105,11 @@ function doStage(page, globalState) {
           }
           console.log('document id0');
       }
+      else if (globalState.stage == 5 ) {
+          console.log('stage 5 processing is ==--------- ' +window[globalState._jsFileInProgressInd]);
+          if(!window[globalState._jsFileInProgressInd]) globalState.stage = 4;
+         
+      }
       } catch (exx) {console.log('errro in js '  + exx);}
      //window.callPhantom({exit:true});
      return globalState;
@@ -110,7 +117,7 @@ function doStage(page, globalState) {
     if (retstate) _.assign(globalState, retstate);
     //console.log('end of doStage ' + globalState.stage);
     cnt++;
-    page.render('done'+cnt+'.png');
+    //page.render('done'+cnt+'.png');
 }
 
 var cnt = 0;
@@ -138,7 +145,7 @@ var myState = {
     getDownloadFileContext : function(request, callContext) {
         if (callContext.stage >= 5) {
             if (request.url && request.url.indexOf('https://secure.bankofamerica.com/mycommunications/statements/retrievedocument.go') != -1) {
-                console.log('Request ' + JSON.stringify(request));
+                console.log('=====>>>>>>Request ' + request.postData+' ' + request.url);
                 return {
                     method: 'POST',
                     url: request.url,
