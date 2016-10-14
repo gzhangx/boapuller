@@ -63,14 +63,19 @@ function doStage(page, globalState) {
           console.log('stage 3');
           $("[title='Statements & Documents']")[0].click();
           globalState.stage = 4;
-          console.log('document clicked');
+          console.log('document tab clicked');
       } else if (globalState.stage == 4 && $("[id='documentId0']").length) {
           globalState.stage = 5;
           if (!window[globalState._jsFileInProgressInd]) {
-              $("[id='documentId0']")[0].click();
+              var docLink = $('[id=documentId'+globalState.documentId+']');
+              if (docLink.length == 0) {
+                  console.log('end of documents reached');
+                  return;
+              }
+              var seldate = docLink.parent().parent().children()[0].innerHTML;
+              docLink[0].click();
               if ($("[id='menuOption3']").length) {
                   var biggest = null;
-                  var biggestVal = 0;
                   if (!globalState.savedFiles) globalState.savedFiles = {};
                   var mo3s = $("[id='menuOption3']");
                   for (var moi = 0; moi < mo3s.length; moi++) {
@@ -78,23 +83,25 @@ function doStage(page, globalState) {
                       //console.log('processing mo3 ' + moi + ' ' + mo3.outerHTML + ' ' + (typeof mo3.outerHTML));
 
                       var mmddyyyy = mo3.outerHTML.match(/\d\d\/\d\d\/\d\d\d\d/)[0];
-                      console.log('mmddyyyy = ' + mmddyyyy + ' ' + (typeof mmddyyyy));
+                      if (mmddyyyy != seldate) continue;
+                      console.log('mmddyyyy = ' + mmddyyyy );
                       var yymmdd = (mmddyyyy.substr(6, 4) + mmddyyyy.substr(0, 2)) + mmddyyyy.substr(3, 2);
                       console.log('intval is ' + yymmdd);
                       var iyymmdd = parseInt(yymmdd);
                       var fname = 'BOA_' + iyymmdd + '.pdf';
-                      if (iyymmdd > biggestVal && !globalState.savedFiles[fname]) {
+                      globalState.documentId++;
+                      if (!globalState.savedFiles[fname]) {
                           //globalState.savedFiles[fname] = true;
                           globalState._saveFileName = 'pdfs/'+fname;
                           globalState._dictSaveFileName = fname;
-                          biggestVal = iyymmdd;
                           biggest = mo3;
+                          break;
                       }
                   }
                   if (biggest) {
                       //console.log('processing mo3 ' + biggest.outerHTML);
                       globalState.savedFiles[globalState._dictSaveFileName] = true;
-                      console.log('download actual click ' + globalState._saveFileName);
+                      console.log('download actual click ' + globalState._saveFileName +' ' + globalState.documentId);
                       biggest.click();
                   }
 
@@ -126,6 +133,7 @@ var myState = {
     callContext : {
         savedFiles : {},
         stage : 0,
+        documentId : 0,
         questionAnswers :questionAnswers
     },
     url: 'https://secure.bankofamerica.com/login/sign-in/signOnV2Screen.go',
@@ -145,7 +153,7 @@ var myState = {
     getDownloadFileContext : function(request, callContext) {
         if (callContext.stage >= 5) {
             if (request.url && request.url.indexOf('https://secure.bankofamerica.com/mycommunications/statements/retrievedocument.go') != -1) {
-                console.log('=====>>>>>>Request ' + request.postData+' ' + request.url);
+                console.log('=====>>>>>>Request ' + request.postData);//+' ' + request.url);
                 return {
                     method: 'POST',
                     url: request.url,
