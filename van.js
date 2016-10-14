@@ -11,7 +11,14 @@ function doStage(page, globalState) {
         globalState.passcode = fs.read('passcode.txt');
         console.log('got passcode ' + globalState.passcode);
     }
-    var retstate = page.evaluate(function(globalState){
+    var retstate = page.evaluate(function (globalState) {
+        var dirName = 'vanpdfs/';
+        function getFileName(row) {
+            var dateSpt = row[0].innerHTML.split('/'); //mm/dd/yyyy
+            var date = dateSpt[2] + dateSpt[0] + dateSpt[1];
+            var name = row[1].innerHTML.replace('&amp;','_').replace(/[^A-Za-z0-9_]*/g, '');
+            return 'VAN_' + date + '_' + name + '.pdf';
+        }
         try{
             var unamel= document.getElementById('USER');
             if (unamel && globalState.stage == 0) {
@@ -51,10 +58,12 @@ function doStage(page, globalState) {
                         var row = rows[i]
                         var click = row.children[2].children[0].children[0].children[0].children[0].children[0];
                         if (globalState.documentId == i) {
-                            console.log('date = ' + row.children[0].innerHTML + ' ' + row.children[1].innerHTML + ' ' + click);
+                            console.log('date = ' + row.children[0].innerHTML + ' ' + row.children[1].innerHTML);
+                            window[globalState._jsFileInProgressInd] = true;
                             click.click();
-                            console.log('downloading ' + globalState.documentId);
-                            globalState._saveFileName = 'savedpdf' + globalState.documentId + '.pdf';
+                            globalState._curFileName = getFileName(row.children);
+                            globalState._saveFileName = dirName + globalState._curFileName;
+                            console.log('downloading ' + globalState.documentId + ' ' + globalState._saveFileName);
                             globalState.stage == 4;
                         }
                     }
