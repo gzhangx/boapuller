@@ -51,25 +51,26 @@ function createDownloadHelper(initData) {
 
     if (initData.getDownloadFileContext) {
         sub('onResourceRequested', function (request) {
-            initData.callContext._phFileDownloadRequest = initData.getDownloadFileContext(request, initData.callContext);
+            initData._phFileDownloadRequest = initData.getDownloadFileContext(request, initData.callContext);
         });
     }
 
     sub('onProcessing', function (page) {
+        initData.callContext._phFileDownloadRequest = initData._phFileDownloadRequest;
         initData.callContext = page.evaluate(function (callContext) {
-            if (callContext._phFileDownloadRequest) {
+            if (callContext._phFileDownloadRequest) {                
                 var downloadInfo = callContext._phFileDownloadRequest;
                 callContext._phFileDownloadRequest = null;
                 window[callContext._jsFileInProgressInd] = true;
                 //console.log('downloading ' + downloadInfo.url);
-                console.log('downloading ====>>>>>>>>>>>' + downloadInfo.postData);
+                console.log('downloading ====>>>>>>>>>>>' + downloadInfo.method + ' ' + downloadInfo.url);
                 var xhr = new XMLHttpRequest();
                 xhr.open(downloadInfo.method || 'POST', downloadInfo.url, true);
                 xhr.responseType = 'arraybuffer';
                 xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-                xhr.onreadystatechange= function(e) { 
- //console.log('onreadystagechange -------- ' + xhr.readyState);
-   };
+                xhr.onreadystatechange = function (e) {
+                    //console.log('onreadystagechange -------- ' + xhr.readyState);
+                };                
                 xhr.onload = function () {
                     console.log('xhr returned---------------');
                     var data = '';
@@ -80,11 +81,12 @@ function createDownloadHelper(initData) {
                     window.callPhantom({_saveFileData: {data: data}});
                     window[callContext._jsFileInProgressInd] = false;
                 };
-                if (downloadInfo.postData) xhr.send(downloadInfo.postData);
+                xhr.send(downloadInfo.postData);
                 console.log('return after file load ' + downloadInfo.postData);
             }
             return callContext;
         }, initData.callContext);
+        initData._phFileDownloadRequest = null;
     });
     sub('onCallback', function (data) {
         if (data._saveFileData && data._saveFileData.data && initData.callContext._saveFileName) {
@@ -111,7 +113,6 @@ function createDownloadHelper(initData) {
       if (!initData._loadStarted) initData._loadStarted = 0;
       if (!initData._loadFinished) initData._loadFinished = 0;
       if (initData._loadStarted == initData._loadFinished) {
-          console.log('--------------- o  processing ' + initData.callContext._phFileDownloadRequest);
         initData.onProcessing(page, initData.callContext);
       } else {
         //console.log('----- bypassed processing ' + initData._loadStarted+' ' + initData._loadFinished);
