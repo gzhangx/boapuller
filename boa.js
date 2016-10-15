@@ -101,8 +101,12 @@ function doStage(page, globalState) {
                   if (biggest) {
                       //console.log('processing mo3 ' + biggest.outerHTML);
                       globalState.savedFiles[globalState._dictSaveFileName] = true;
+                      window[globalState._jsFileInProgressInd] = true;
                       console.log('download actual click ' + globalState._saveFileName +' ' + globalState.documentId);
                       biggest.click();
+                  } else {
+                      console.log('no more files');
+                      window.callPhantom({ phantomExit: true });
                   }
 
                   console.log('donwload clicked');
@@ -178,8 +182,7 @@ var myState = {
 var existing = fs.list('./pdfs');
 existing.map(function(v){
   if (v.indexOf('BOA') == 0) {
-      myState.callContext.savedFiles[v] = true;
-      console.log(JSON.stringify(myState.callContext.savedFiles));
+      myState.callContext.savedFiles[v] = true;      
   }
 });
 
