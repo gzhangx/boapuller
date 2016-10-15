@@ -9,7 +9,7 @@ function doStage(page, globalState) {
     //var args = system.args;
     if (fs.isFile('passcode.txt')) {
         globalState.passcode = fs.read('passcode.txt');
-        console.log('got passcode ' + globalState.passcode);
+        if (globalState.passcode && globalState.passcode.length)console.log('got passcode ' + globalState.passcode);
     }
     var retstate = page.evaluate(function (globalState) {
         var dirName = 'vanpdfs/';
@@ -25,23 +25,22 @@ function doStage(page, globalState) {
                 //login
                 unamel.value = globalState.cr.ua;
                 document.getElementById('PASSWORD').value= globalState.cr.pw;
-                console.log('username clicking');
+                console.log('JS:Login');
                 document.getElementById('login').click();
                 globalState.stage = 1;
             } else if (globalState.stage == 1 ){
                 if (document.getElementById('LoginForm:ANSWER')) {
-                    console.log('challenge answer');
+                    console.log('JS:challenge answer');
                     if (!globalState.passcode || globalState.passcode == '') return globalState;
                     globalState.stage = 2;
-                    console.log('clicking save cookie');
+                    console.log('JS:clicking save cookie');
                     document.getElementById('LoginForm:DEVICE:0').click();
                     var ans = document.getElementById('LoginForm:ANSWER');
-                    ans.value = globalState.passcode;
-                    console.log('get input');
+                    ans.value = globalState.passcode;                    
                     document.getElementById('LoginForm:ContinueInput').click();
-                    console.log('passcode verify');
+                    console.log('JS:passcode verify');
                 } else  {
-                    console.log('waiting for passcoce');
+                    console.log('JS:waiting for passcoce');
                     globalState.stage = 2;
                     window.location = 'https://personal.vanguard.com/us/Statements';
                     return globalState;
@@ -50,7 +49,7 @@ function doStage(page, globalState) {
                 globalState.stage = 3;
                 //window.location = 'https://personal.vanguard.com/us/Statements';
                 //window.location = 'https://personal.vanguard.com/my-accounts/account-overview/balances';
-                console.log('redirecting to statements');
+                console.log('JS:redirecting to statements');
             }else if (globalState.stage == 3) {
                 if (!window[globalState._jsFileInProgressInd]) {
                     var rows = document.getElementById('StmtSummaryForm:stmtDataTable').children[1].children;
@@ -65,11 +64,15 @@ function doStage(page, globalState) {
                                 window[globalState._jsFileInProgressInd] = true;
                                 click.click();
                                 globalState.savedFiles[fname] = true;
-                                console.log('downloading ' + globalState.documentId + ' ' + globalState._saveFileName);
-                                globalState.stage == 4;
+                                console.log('downloading ' + globalState.documentId + ' ' + fname);
+                                globalState.stage = 4;
                                 break;
                             }                                                        
                         }
+                    }
+                    if (globalState.stage == 3) {
+                        console.log("no more files");
+                        window.callPhantom({phantomExit:true});
                     }
                 } else console.log('downd in prog');
             }else if (globalState.stage == 4 ) {
@@ -78,7 +81,7 @@ function doStage(page, globalState) {
 
             }
         } catch (exx) {console.log('errro in js '  + exx);}
-        //window.callPhantom({exit:true});
+        //window.callPhantom({phantomExit:true});
         return globalState;
     }, globalState);
     if (retstate) _.assign(globalState, retstate);

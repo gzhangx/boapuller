@@ -71,8 +71,7 @@ function createDownloadHelper(initData) {
                 xhr.onreadystatechange = function (e) {
                     //console.log('onreadystagechange -------- ' + xhr.readyState);
                 };                
-                xhr.onload = function () {
-                    console.log('xhr returned---------------');
+                xhr.onload = function () {                    
                     var data = '';
                     var u8 = new Uint8Array(this.response);
                     for (var i = 0; i < u8.length; i++) {
@@ -82,7 +81,7 @@ function createDownloadHelper(initData) {
                     window[callContext._jsFileInProgressInd] = false;
                 };
                 xhr.send(downloadInfo.postData);
-                console.log('return after file load ' + downloadInfo.postData);
+                console.log('JS===========>return after file load ' + downloadInfo.url);
             }
             return callContext;
         }, initData.callContext);
@@ -90,7 +89,7 @@ function createDownloadHelper(initData) {
     });
     sub('onCallback', function (data) {
         if (data._saveFileData && data._saveFileData.data && initData.callContext._saveFileName) {
-            console.log('debugremove got file data ' + initData.callContext._saveFileName);
+            console.log('PH============> got file data ' + initData.callContext._saveFileName);
             var fileData = data._saveFileData.data;
             try {
                 var str = '';
@@ -99,9 +98,9 @@ function createDownloadHelper(initData) {
                     str += String.fromCharCode(h);
                 }
                 fs.write(initData.callContext._saveFileName, str, 'wb');
-                console.log('done write file ' + initData.callContext._saveFileName);
+                console.log('PH============>done write file ' + initData.callContext._saveFileName);
             } catch (err) {
-                console.log('error happened in file save ' + err);
+                console.log('PH==!!!!!!!!!!>error happened in file save ' + err);
             }
         }
         if (data.phantomExit) {
